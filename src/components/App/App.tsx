@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import css from "./App.module.css";
 import SearchBox from "../SearchBox/SearchBox";
@@ -12,7 +17,11 @@ import type { NoteFormValues } from "../NoteForm/NoteForm";
 import Loader from "../Loader/Loader";
 import ErrorMessage from "../ErrorMessage/ErrorMessage";
 
-import { fetchNotes, createNote, deleteNote } from "../../services/noteService";
+import {
+  fetchNotes,
+  createNote,
+  deleteNote,
+} from "../../services/noteService";
 
 const PER_PAGE = 12;
 
@@ -37,10 +46,15 @@ export default function App() {
     debouncedSearch(value);
   };
 
-  const { data, isLoading, isError } = useQuery({
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ["notes", page, search],
     queryFn: () => fetchNotes({ page, perPage: PER_PAGE, search }),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 
   const notes = data?.notes ?? [];
@@ -67,7 +81,11 @@ export default function App() {
         <SearchBox value={searchInput} onChange={handleSearchChange} />
 
         {totalPages > 1 && (
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         )}
 
         <button className={css.button} onClick={openModal}>
@@ -76,10 +94,16 @@ export default function App() {
       </header>
 
       {isLoading && <Loader />}
-      {isError && <ErrorMessage />}
+
+      {isError && (
+        <ErrorMessage message={(error as Error).message} />
+      )}
 
       {notes.length > 0 && (
-        <NoteList notes={notes} onDelete={(id) => deleteMutation.mutate(id)} />
+        <NoteList
+          notes={notes}
+          onDelete={(id) => deleteMutation.mutate(id)}
+        />
       )}
 
       {isModalOpen && (
